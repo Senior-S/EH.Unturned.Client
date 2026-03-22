@@ -37,8 +37,7 @@ jobs:
         mkdir -p "$UNTURNED_DIR"
         steamcmd \
           +force_install_dir "$UNTURNED_DIR" \
-          +@sSteamCmdForcePlatformType windows \
-          +login "${{ secrets.STEAM_USERNAME }}" "${{ secrets.STEAM_PASSWORD }}" \
+          +login anonymous \
           +app_update 304930 -validate \
           +quit
 
@@ -77,7 +76,7 @@ jobs:
           exit 1
         fi
 
-        echo "PACKAGE_VERSION=0.0.$build_id" >> "$GITHUB_ENV"
+        echo "PACKAGE_VERSION=0.$build_id" >> "$GITHUB_ENV"
         echo "MANAGED_DIR=$managed_dir" >> "$GITHUB_ENV"
 
         net48_dir="$PACKAGE_DIR/lib/net48"
