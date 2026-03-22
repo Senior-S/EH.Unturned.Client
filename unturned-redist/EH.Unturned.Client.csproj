@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <NoBuild>true</NoBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PackageId>EH.Unturned.Client</PackageId>
+    <Authors>SmartlyDressedGames;EH</Authors>
+    <Description>Client-side Unturned managed assemblies packaged from the latest Steam build.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>unturned;unity;steamcmd;redist</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="lib\net48\**\*.dll" Pack="true" PackagePath="lib\net48" Visible="false" />
+    <None Include="lib\netstandard2.1\**\*.dll" Pack="true" PackagePath="lib\netstandard2.1" Visible="false" />
+  </ItemGroup>
+</Project>

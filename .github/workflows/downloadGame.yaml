@@ -1,0 +1,137 @@
+name: "Download game data"
+
+on:
+  schedule:
+    - cron: '*/60 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: download-game-redist
+  cancel-in-progress: false
+
+jobs:
+  package_redist:
+    name: "Download Unturned and pack redist"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Setup SteamCMD
+      id: setup-steamcmd
+      uses: CyberAndrii/setup-steamcmd@v1
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.x
+
+    - name: Download Unturned
+      env:
+        UNTURNED_DIR: ${{ runner.temp }}/unturned
+      run: |
+        rm -rf "$UNTURNED_DIR"
+        mkdir -p "$UNTURNED_DIR"
+        steamcmd \
+          +force_install_dir "$UNTURNED_DIR" \
+          +@sSteamCmdForcePlatformType windows \
+          +login "${{ secrets.STEAM_USERNAME }}" "${{ secrets.STEAM_PASSWORD }}" \
+          +app_update 304930 -validate \
+          +quit
+
+    - name: Extract managed assemblies
+      env:
+        UNTURNED_DIR: ${{ runner.temp }}/unturned
+        PACKAGE_DIR: ${{ github.workspace }}/github/unturned-redist
+      run: |
+        set -euo pipefail
+
+        managed_dir=""
+        for candidate in \
+          "$UNTURNED_DIR/Unturned_Data/Managed" \
+          "$UNTURNED_DIR/Unturned_Headless_Data/Managed"
+        do
+          if [ -d "$candidate" ]; then
+            managed_dir="$candidate"
+            break
+          fi
+        done
+
+        if [ -z "$managed_dir" ]; then
+          echo "Could not find the Unturned managed assemblies directory."
+          exit 1
+        fi
+
+        manifest_path="$UNTURNED_DIR/steamapps/appmanifest_304930.acf"
+        if [ ! -f "$manifest_path" ]; then
+          echo "Could not find Steam app manifest at $manifest_path."
+          exit 1
+        fi
+
+        build_id="$(sed -n 's/.*"buildid"[[:space:]]*"\([0-9]\+\)".*/\1/p' "$manifest_path" | head -n 1)"
+        if [ -z "$build_id" ]; then
+          echo "Could not extract buildid from $manifest_path."
+          exit 1
+        fi
+
+        echo "PACKAGE_VERSION=0.0.$build_id" >> "$GITHUB_ENV"
+        echo "MANAGED_DIR=$managed_dir" >> "$GITHUB_ENV"
+
+        net48_dir="$PACKAGE_DIR/lib/net48"
+        netstandard_dir="$PACKAGE_DIR/lib/netstandard2.1"
+
+        rm -rf "$PACKAGE_DIR/lib"
+        mkdir -p "$net48_dir" "$netstandard_dir"
+
+        required_files=(
+          "Assembly-CSharp.dll"
+          "com.rlabrecque.steamworks.net.dll"
+          "Newtonsoft.Json.dll"
+          "SDG.Glazier.Runtime.dll"
+          "SDG.NetPak.Runtime.dll"
+          "SDG.NetTransport.dll"
+          "SystemEx.dll"
+          "UnityEx.dll"
+          "UnturnedDat.dll"
+        )
+
+        for file_name in "${required_files[@]}"; do
+          source_path="$managed_dir/$file_name"
+          if [ ! -f "$source_path" ]; then
+            echo "Required assembly is missing: $source_path"
+            exit 1
+          fi
+
+          cp "$source_path" "$net48_dir/"
+          cp "$source_path" "$netstandard_dir/"
+        done
+
+        shopt -s nullglob
+        unity_files=("$managed_dir"/Unity.*.dll "$managed_dir"/UnityEngine.*.dll)
+        shopt -u nullglob
+
+        if [ "${#unity_files[@]}" -eq 0 ]; then
+          echo "No Unity.*.dll or UnityEngine.*.dll files were found in $managed_dir."
+          exit 1
+        fi
+
+        for source_path in "${unity_files[@]}"; do
+          cp "$source_path" "$net48_dir/"
+          cp "$source_path" "$netstandard_dir/"
+        done
+
+    - name: Pack NuGet package
+      run: dotnet pack "${{ github.workspace }}/github/unturned-redist/EH.Unturned.Client.csproj" --configuration Release --output "${{ github.workspace }}/artifacts" -p:Version="${PACKAGE_VERSION}"
+
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: EH.Unturned.Client-${{ env.PACKAGE_VERSION }}
+        path: ${{ github.workspace }}/artifacts/*.nupkg
+
+    - name: Push to NuGet
+      if: ${{ secrets.NUGET_API_KEY != '' }}
+      run: dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
