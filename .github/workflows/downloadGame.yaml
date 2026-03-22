@@ -37,6 +37,7 @@ jobs:
         mkdir -p "$UNTURNED_DIR"
         steamcmd \
           +force_install_dir "$UNTURNED_DIR" \
+          +@sSteamCmdForcePlatformType windows \
           +login anonymous \
           +app_update 304930 -validate \
           +quit
@@ -48,27 +49,21 @@ jobs:
       run: |
         set -euo pipefail
 
-        managed_dir=""
-        for candidate in \
-          "$UNTURNED_DIR/Unturned_Data/Managed" \
-          "$UNTURNED_DIR/Unturned_Headless_Data/Managed"
-        do
-          if [ -d "$candidate" ]; then
-            managed_dir="$candidate"
-            break
-          fi
-        done
-
-        if [ -z "$managed_dir" ]; then
-          echo "Could not find the Unturned managed assemblies directory."
+        manifest_path="$(find "$UNTURNED_DIR" -path '*/steamapps/appmanifest_304930.acf' | head -n 1)"
+        if [ -z "$manifest_path" ]; then
+          echo "Could not find Steam app manifest under $UNTURNED_DIR."
+          find "$UNTURNED_DIR" -maxdepth 4 -type d | sort
           exit 1
         fi
 
-        manifest_path="$UNTURNED_DIR/steamapps/appmanifest_304930.acf"
-        if [ ! -f "$manifest_path" ]; then
-          echo "Could not find Steam app manifest at $manifest_path."
+        assembly_path="$(find "$UNTURNED_DIR" -path '*/Managed/Assembly-CSharp.dll' | head -n 1)"
+        if [ -z "$assembly_path" ]; then
+          echo "Could not find Assembly-CSharp.dll under $UNTURNED_DIR."
+          find "$UNTURNED_DIR" -maxdepth 6 \( -type d -o -type f \) | sort | tail -n 200
           exit 1
         fi
+
+        managed_dir="$(dirname "$assembly_path")"
 
         build_id="$(sed -n 's/.*"buildid"[[:space:]]*"\([0-9]\+\)".*/\1/p' "$manifest_path" | head -n 1)"
         if [ -z "$build_id" ]; then
@@ -76,7 +71,7 @@ jobs:
           exit 1
         fi
 
-        echo "PACKAGE_VERSION=0.$build_id" >> "$GITHUB_ENV"
+        echo "PACKAGE_VERSION=0.0.$build_id" >> "$GITHUB_ENV"
         echo "MANAGED_DIR=$managed_dir" >> "$GITHUB_ENV"
 
         net48_dir="$PACKAGE_DIR/lib/net48"
