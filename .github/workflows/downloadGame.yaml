@@ -44,7 +44,7 @@ jobs:
     - name: Extract managed assemblies
       env:
         UNTURNED_DIR: ${{ runner.temp }}/unturned
-        PACKAGE_DIR: ${{ github.workspace }}/github/unturned-redist
+        PACKAGE_DIR: ${{ github.workspace }}/unturned-redist
       run: |
         set -euo pipefail
 
@@ -123,7 +123,7 @@ jobs:
         done
 
     - name: Pack NuGet package
-      run: dotnet pack "${{ github.workspace }}/github/unturned-redist/EH.Unturned.Client.csproj" --configuration Release --output "${{ github.workspace }}/artifacts" -p:Version="${PACKAGE_VERSION}"
+      run: dotnet pack "${{ github.workspace }}/unturned-redist/EH.Unturned.Client.csproj" --configuration Release --output "${{ github.workspace }}/artifacts" -p:Version="${PACKAGE_VERSION}"
 
     - name: Upload package artifact
       uses: actions/upload-artifact@v4
@@ -132,5 +132,7 @@ jobs:
         path: ${{ github.workspace }}/artifacts/*.nupkg
 
     - name: Push to NuGet
-      if: ${{ secrets.NUGET_API_KEY != '' }}
-      run: dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      if: ${{ env.NUGET_API_KEY != '' }}
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg" --api-key "${NUGET_API_KEY}" --source https://api.nuget.org/v3/index.json --skip-duplicate
