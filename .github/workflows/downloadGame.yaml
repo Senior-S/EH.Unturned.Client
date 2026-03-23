@@ -56,7 +56,13 @@ jobs:
           exit 1
         fi
 
-        folders=$(ls $UNTURNED_DIR)
+        folders=$(ls $UNTURNED_DIR/steamapps/common)
+        echo $folders
+        echo "Unturned folder:"
+        folders=$(ls $UNTURNED_DIR/steamapps/common/Unturned)
+        echo $folders
+        echo "Possible libs:"
+        folders=$(ls $UNTURNED_DIR/steamapps/common/Unturned/Unturned_Data)
         echo $folders
 
         assembly_path="$(find "$UNTURNED_DIR" -path '*/steamapps/common/Unturned/Unturned_Data/Managed/Assembly-CSharp.dll' | head -n 1)"
