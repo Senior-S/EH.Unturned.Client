@@ -63,18 +63,28 @@ jobs:
       run: |
         set -euo pipefail
 
-        steam_root="${HOME}/Steam"
-        depot_path="$(find "$steam_root/steamapps/content" -path '*/app_304930/depot_304935/Unturned_Data/Managed/Assembly-CSharp.dll' | head -n 1)"
-        if [ -z "$depot_path" ]; then
-          echo "Could not find Assembly-CSharp.dll in downloaded depot 304935."
+        depot_root="$(sed -n 's|.*Depot download complete : "\([^"]*\)".*|\1|p' "$UNTURNED_DIR/steamcmd.log" | tail -n 1)"
+        depot_root="${depot_root//\\//}"
+
+        if [ -z "$depot_root" ]; then
+          echo "Could not extract depot path from SteamCMD output."
           echo "SteamCMD log:"
           cat "$UNTURNED_DIR/steamcmd.log"
-          echo "Steam content tree:"
-          find "$steam_root" -maxdepth 6 \( -type d -o -type f \) | sort | tail -n 300
           exit 1
         fi
 
-        managed_dir="$(dirname "$depot_path")"
+        assembly_path="$(find "$depot_root" -path '*/Unturned_Data/Managed/Assembly-CSharp.dll' | head -n 1)"
+        if [ -z "$assembly_path" ]; then
+          echo "Could not find Assembly-CSharp.dll in downloaded depot 304935."
+          echo "Resolved depot root: $depot_root"
+          echo "SteamCMD log:"
+          cat "$UNTURNED_DIR/steamcmd.log"
+          echo "Depot tree:"
+          find "$depot_root" -maxdepth 6 \( -type d -o -type f \) | sort | tail -n 300
+          exit 1
+        fi
+
+        managed_dir="$(dirname "$assembly_path")"
 
         build_id="$(sed -n 's/.*"buildid"[[:space:]]*"[[:space:]]*"\([0-9]\+\)".*/\1/p' "$UNTURNED_DIR/steamcmd.log" | head -n 1)"
         if [ -z "$build_id" ]; then
