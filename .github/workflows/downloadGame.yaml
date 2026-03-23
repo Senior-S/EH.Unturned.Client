@@ -59,6 +59,7 @@ jobs:
       env:
         UNTURNED_DIR: ${{ runner.temp }}/unturned
         PACKAGE_DIR: ${{ github.workspace }}/unturned-redist
+        STEAM_BRANCH: public
       run: |
         set -euo pipefail
 
@@ -85,6 +86,10 @@ jobs:
 
         managed_dir="$(dirname "$assembly_path")"
 
+        game_version="$(curl -fsSL "https://smartlydressedgames.com/unturned-steam-versions/${STEAM_BRANCH}.txt" || true)"
+        game_version="${game_version//$'\r'/}"
+        game_version="${game_version//$'\n'/}"
+
         manifest_id="$(sed -n 's/.*manifest \([0-9]\+\)).*/\1/p' "$UNTURNED_DIR/steamcmd.log" | tail -n 1)"
         if [ -z "$manifest_id" ]; then
           echo "Could not extract depot manifest id from SteamCMD output."
@@ -93,7 +98,13 @@ jobs:
           exit 1
         fi
 
-        echo "PACKAGE_VERSION=1.0.0.$manifest_id" >> "$GITHUB_ENV"
+        if [[ "$game_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+          package_version="$game_version"
+        else
+          package_version="0.0.1-depot304935.$manifest_id"
+        fi
+
+        echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
         echo "MANAGED_DIR=$managed_dir" >> "$GITHUB_ENV"
 
         net48_dir="$PACKAGE_DIR/lib/net48"
@@ -145,7 +156,7 @@ jobs:
     - name: Upload package artifact
       uses: actions/upload-artifact@v4
       with:
-        name: EH.Unturned.Client-${{ env.PACKAGE_VERSION }}
+        name: EH2.Unturned.Client-${{ env.PACKAGE_VERSION }}
         path: ${{ github.workspace }}/artifacts/*.nupkg
 
     - name: Push to NuGet
