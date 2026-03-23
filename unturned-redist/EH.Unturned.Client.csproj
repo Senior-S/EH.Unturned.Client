@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
     <None Include="lib\net48\**\*.dll" Pack="true" PackagePath="lib\net48" Visible="false" />
     <None Include="lib\netstandard2.1\**\*.dll" Pack="true" PackagePath="lib\netstandard2.1" Visible="false" />
   </ItemGroup>
