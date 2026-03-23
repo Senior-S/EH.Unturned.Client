@@ -50,7 +50,6 @@ jobs:
           fi
           echo "app_license_request 304930"
           echo "download_depot 304930 304935"
-          echo "app_info_print 304930"
           echo "quit"
         } > "$steamcmd_script"
 
