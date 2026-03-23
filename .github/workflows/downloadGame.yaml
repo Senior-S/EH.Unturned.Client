@@ -32,15 +32,29 @@ jobs:
     - name: Download Unturned
       env:
         UNTURNED_DIR: ${{ runner.temp }}/unturned
+        STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+        STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
       run: |
+        set -euo pipefail
+
         rm -rf "$UNTURNED_DIR"
         mkdir -p "$UNTURNED_DIR"
-        steamcmd \
-          +force_install_dir "$UNTURNED_DIR" \
-          +@sSteamCmdForcePlatformType windows \
-          +login anonymous \
-          +app_update 304930 -validate \
-          +quit
+
+        steamcmd_script="$UNTURNED_DIR/steamcmd_script.txt"
+        {
+          echo "@sSteamCmdForcePlatformType windows"
+          if [ -n "${STEAM_USERNAME:-}" ] && [ -n "${STEAM_PASSWORD:-}" ]; then
+            echo "login ${STEAM_USERNAME} ${STEAM_PASSWORD}"
+          else
+            echo "login anonymous"
+          fi
+          echo "app_license_request 304930"
+          echo "download_depot 304930 304935"
+          echo "app_info_print 304930"
+          echo "quit"
+        } > "$steamcmd_script"
+
+        steamcmd +runscript "$steamcmd_script" 2>&1 | tee "$UNTURNED_DIR/steamcmd.log"
 
     - name: Extract managed assemblies
       env:
@@ -49,36 +63,24 @@ jobs:
       run: |
         set -euo pipefail
 
-        manifest_path="$(find "$UNTURNED_DIR" -path '*/steamapps/appmanifest_304930.acf' | head -n 1)"
-        if [ -z "$manifest_path" ]; then
-          echo "Could not find Steam app manifest under $UNTURNED_DIR."
-          find "$UNTURNED_DIR" -maxdepth 4 -type d | sort
+        steam_root="${HOME}/Steam"
+        depot_path="$(find "$steam_root/steamapps/content" -path '*/app_304930/depot_304935/Unturned_Data/Managed/Assembly-CSharp.dll' | head -n 1)"
+        if [ -z "$depot_path" ]; then
+          echo "Could not find Assembly-CSharp.dll in downloaded depot 304935."
+          echo "SteamCMD log:"
+          cat "$UNTURNED_DIR/steamcmd.log"
+          echo "Steam content tree:"
+          find "$steam_root" -maxdepth 6 \( -type d -o -type f \) | sort | tail -n 300
           exit 1
         fi
 
-        folders=$(ls $UNTURNED_DIR/steamapps)
-        echo $folders
-        folders=$(ls $UNTURNED_DIR/steamapps/common)
-        echo $folders
-        echo "Unturned folder:"
-        folders=$(ls $UNTURNED_DIR/steamapps/common/Unturned)
-        echo $folders
-        echo "Possible libs:"
-        folders=$(ls $UNTURNED_DIR/steamapps/common/Unturned/Unturned_Data)
-        echo $folders
+        managed_dir="$(dirname "$depot_path")"
 
-        assembly_path="$(find "$UNTURNED_DIR" -path '*/steamapps/common/Unturned/Unturned_Data/Managed/Assembly-CSharp.dll' | head -n 1)"
-        if [ -z "$assembly_path" ]; then
-          echo "Could not find Assembly-CSharp.dll under $UNTURNED_DIR."
-          find "$UNTURNED_DIR" -maxdepth 6 \( -type d -o -type f \) | sort | tail -n 200
-          exit 1
-        fi
-
-        managed_dir="$(dirname "$assembly_path")"
-
-        build_id="$(sed -n 's/.*"buildid"[[:space:]]*"\([0-9]\+\)".*/\1/p' "$manifest_path" | head -n 1)"
+        build_id="$(sed -n 's/.*"buildid"[[:space:]]*"[[:space:]]*"\([0-9]\+\)".*/\1/p' "$UNTURNED_DIR/steamcmd.log" | head -n 1)"
         if [ -z "$build_id" ]; then
-          echo "Could not extract buildid from $manifest_path."
+          echo "Could not extract buildid from SteamCMD output."
+          echo "SteamCMD log:"
+          cat "$UNTURNED_DIR/steamcmd.log"
           exit 1
         fi
 
