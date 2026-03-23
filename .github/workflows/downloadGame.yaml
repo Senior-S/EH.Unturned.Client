@@ -156,7 +156,7 @@ jobs:
     - name: Upload package artifact
       uses: actions/upload-artifact@v4
       with:
-        name: EH2.Unturned.Client-${{ env.PACKAGE_VERSION }}
+        name: EditorHelper.Unturned.Client-${{ env.PACKAGE_VERSION }}
         path: ${{ github.workspace }}/artifacts/*.nupkg
 
     - name: Push to NuGet
