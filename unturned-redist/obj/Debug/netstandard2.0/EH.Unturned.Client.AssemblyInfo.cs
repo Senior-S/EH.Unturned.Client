@@ -10,11 +10,11 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("SmartlyDressedGames;EH")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("SmartlyDressedGames;EditorHelper")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Client-side Unturned managed assemblies packaged from the latest Steam build.")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57eb7d7421e1c9a208c7ffa20ec4b6c75d88a375")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1175214898cc9aa7db3ed871aa6a592d9b84ee07")]
 [assembly: System.Reflection.AssemblyProductAttribute("EH.Unturned.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EH.Unturned.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
