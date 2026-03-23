@@ -56,6 +56,8 @@ jobs:
           exit 1
         fi
 
+        folders=$(ls $UNTURNED_DIR/steamapps)
+        echo $folders
         folders=$(ls $UNTURNED_DIR/steamapps/common)
         echo $folders
         echo "Unturned folder:"
