@@ -93,7 +93,7 @@ jobs:
           exit 1
         fi
 
-        echo "PACKAGE_VERSION=0.0.1-depot304935.$manifest_id" >> "$GITHUB_ENV"
+        echo "PACKAGE_VERSION=0.1.$manifest_id" >> "$GITHUB_ENV"
         echo "MANAGED_DIR=$managed_dir" >> "$GITHUB_ENV"
 
         net48_dir="$PACKAGE_DIR/lib/net48"
