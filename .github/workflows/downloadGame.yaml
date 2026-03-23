@@ -85,15 +85,15 @@ jobs:
 
         managed_dir="$(dirname "$assembly_path")"
 
-        build_id="$(sed -n 's/.*"buildid"[[:space:]]*"[[:space:]]*"\([0-9]\+\)".*/\1/p' "$UNTURNED_DIR/steamcmd.log" | head -n 1)"
-        if [ -z "$build_id" ]; then
-          echo "Could not extract buildid from SteamCMD output."
+        manifest_id="$(sed -n 's/.*manifest \([0-9]\+\)).*/\1/p' "$UNTURNED_DIR/steamcmd.log" | tail -n 1)"
+        if [ -z "$manifest_id" ]; then
+          echo "Could not extract depot manifest id from SteamCMD output."
           echo "SteamCMD log:"
           cat "$UNTURNED_DIR/steamcmd.log"
           exit 1
         fi
 
-        echo "PACKAGE_VERSION=0.0.$build_id" >> "$GITHUB_ENV"
+        echo "PACKAGE_VERSION=0.0.1-depot304935.$manifest_id" >> "$GITHUB_ENV"
         echo "MANAGED_DIR=$managed_dir" >> "$GITHUB_ENV"
 
         net48_dir="$PACKAGE_DIR/lib/net48"
