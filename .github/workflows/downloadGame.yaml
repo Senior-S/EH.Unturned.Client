@@ -52,11 +52,13 @@ jobs:
         manifest_path="$(find "$UNTURNED_DIR" -path '*/steamapps/appmanifest_304930.acf' | head -n 1)"
         if [ -z "$manifest_path" ]; then
           echo "Could not find Steam app manifest under $UNTURNED_DIR."
+          folders=$(ls $UNTURNED_DIR)
+          echo $folders
           find "$UNTURNED_DIR" -maxdepth 4 -type d | sort
           exit 1
         fi
 
-        assembly_path="$(find "$UNTURNED_DIR" -path '*/Managed/Assembly-CSharp.dll' | head -n 1)"
+        assembly_path="$(find "$UNTURNED_DIR" -path '*/steamapps/common/Unturned/Unturned_Data/Managed/Assembly-CSharp.dll' | head -n 1)"
         if [ -z "$assembly_path" ]; then
           echo "Could not find Assembly-CSharp.dll under $UNTURNED_DIR."
           find "$UNTURNED_DIR" -maxdepth 6 \( -type d -o -type f \) | sort | tail -n 200
