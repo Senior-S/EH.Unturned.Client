@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Client-side Unturned managed assemblies packaged from the latest Steam build.")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dd7a549f7948ca34d89c5f6e67a64fc869b48c9f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57eb7d7421e1c9a208c7ffa20ec4b6c75d88a375")]
 [assembly: System.Reflection.AssemblyProductAttribute("EH.Unturned.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EH.Unturned.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
